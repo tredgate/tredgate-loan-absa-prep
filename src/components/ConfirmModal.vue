@@ -1,5 +1,7 @@
 <script setup lang="ts">
-defineProps<{
+import { onUnmounted, watch, ref } from 'vue'
+
+const props = defineProps<{
   show: boolean
   title: string
   message: string
@@ -9,17 +11,55 @@ const emit = defineEmits<{
   confirm: []
   cancel: []
 }>()
+
+const deleteButtonRef = ref<HTMLButtonElement | null>(null)
+
+function handleKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape') {
+    emit('cancel')
+  }
+}
+
+watch(() => props.show, (newValue) => {
+  if (newValue) {
+    document.addEventListener('keydown', handleKeydown)
+    // Focus the delete button when modal opens
+    setTimeout(() => deleteButtonRef.value?.focus(), 0)
+  } else {
+    document.removeEventListener('keydown', handleKeydown)
+  }
+})
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleKeydown)
+})
 </script>
 
 <template>
   <Teleport to="body">
-    <div v-if="show" class="modal-overlay" @click.self="emit('cancel')">
-      <div class="modal-content">
-        <h3>{{ title }}</h3>
-        <p>{{ message }}</p>
+    <div 
+      v-if="show" 
+      class="modal-overlay" 
+      @click.self="emit('cancel')"
+    >
+      <div 
+        class="modal-content"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
+        aria-describedby="modal-message"
+      >
+        <h3 id="modal-title">{{ title }}</h3>
+        <p id="modal-message">{{ message }}</p>
         <div class="modal-actions">
           <button class="btn-ghost" @click="emit('cancel')">Cancel</button>
-          <button class="btn-delete" @click="emit('confirm')">Delete</button>
+          <button 
+            ref="deleteButtonRef"
+            class="btn-delete" 
+            @click="emit('confirm')"
+          >
+            Delete
+          </button>
         </div>
       </div>
     </div>
