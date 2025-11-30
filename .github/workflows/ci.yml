@@ -47,9 +47,9 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
 
           if [ -f test-results/results.json ]; then
-            PASSED=$(jq '.numPassedTests // 0' test-results/results.json)
-            FAILED=$(jq '.numFailedTests // 0' test-results/results.json)
-            TOTAL=$(jq '.numTotalTests // 0' test-results/results.json)
+            PASSED=$(jq '[.testResults[]?.result[]? | select(.state == "pass")] | length' test-results/results.json 2>/dev/null || echo 0)
+            FAILED=$(jq '[.testResults[]?.result[]? | select(.state == "fail")] | length' test-results/results.json 2>/dev/null || echo 0)
+            TOTAL=$(jq '[.testResults[]?.result[]?] | length' test-results/results.json 2>/dev/null || echo 0)
             
             echo "| Metric | Count |" >> $GITHUB_STEP_SUMMARY
             echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
