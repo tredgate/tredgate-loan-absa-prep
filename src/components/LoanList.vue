@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import type { LoanApplication } from '../types/loan'
 import { calculateMonthlyPayment } from '../services/loanService'
+import ConfirmModal from './ConfirmModal.vue'
 
 defineProps<{
   loans: LoanApplication[]
@@ -10,7 +12,11 @@ const emit = defineEmits<{
   approve: [id: string]
   reject: [id: string]
   autoDecide: [id: string]
+  delete: [id: string]
 }>()
+
+const showDeleteModal = ref(false)
+const loanToDelete = ref<LoanApplication | null>(null)
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('en-US', {
@@ -31,6 +37,24 @@ function formatDate(isoDate: string): string {
     month: 'short',
     day: 'numeric'
   })
+}
+
+function handleDeleteClick(loan: LoanApplication) {
+  loanToDelete.value = loan
+  showDeleteModal.value = true
+}
+
+function confirmDelete() {
+  if (loanToDelete.value) {
+    emit('delete', loanToDelete.value.id)
+  }
+  showDeleteModal.value = false
+  loanToDelete.value = null
+}
+
+function cancelDelete() {
+  showDeleteModal.value = false
+  loanToDelete.value = null
 }
 </script>
 
@@ -94,12 +118,26 @@ function formatDate(isoDate: string): string {
               >
                 ⚡
               </button>
-              <span v-if="loan.status !== 'pending'" class="no-actions">—</span>
+              <button
+                class="action-btn delete-btn"
+                @click="handleDeleteClick(loan)"
+                title="Delete"
+              >
+                <span class="material-symbols-outlined">delete</span>
+              </button>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
+
+    <ConfirmModal
+      :show="showDeleteModal"
+      title="Delete Loan Application"
+      :message="`Are you sure you want to delete the loan application for ${loanToDelete?.applicantName}?`"
+      @confirm="confirmDelete"
+      @cancel="cancelDelete"
+    />
   </div>
 </template>
 
@@ -132,6 +170,25 @@ function formatDate(isoDate: string): string {
 
 .action-btn:last-child {
   margin-right: 0;
+}
+
+.delete-btn {
+  background-color: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.delete-btn:hover {
+  background-color: #f8f9fa;
+  color: var(--danger-color);
+  border-color: var(--danger-color);
+}
+
+.delete-btn .material-symbols-outlined {
+  font-size: 1.125rem;
 }
 
 .no-actions {

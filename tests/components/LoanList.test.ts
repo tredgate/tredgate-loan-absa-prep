@@ -275,43 +275,49 @@ describe('LoanList', () => {
         props: { loans: [loan] }
       })
       
+      const actionButtons = wrapper.findAll('.action-btn')
+      expect(actionButtons.length).toBeGreaterThan(0)
       expect(wrapper.find('.action-btn.success').exists()).toBe(true)
-      expect(wrapper.find('.action-btn.danger').exists()).toBe(true)
       expect(wrapper.find('.action-btn.secondary').exists()).toBe(true)
     })
 
     /**
-     * Verifies action buttons are hidden for approved loans.
-     * Shows 'no actions' placeholder instead.
+     * Verifies delete button is visible for all loan statuses.
      * @test {LoanList}
      */
-    it('hides action buttons for approved loan', () => {
-      const loan = createMockLoan({ status: 'approved' })
-      const wrapper = mount(LoanList, {
-        props: { loans: [loan] }
-      })
+    it('shows delete button for all loan statuses', () => {
+      const statuses: Array<'pending' | 'approved' | 'rejected'> = ['pending', 'approved', 'rejected']
       
-      expect(wrapper.find('.action-btn.success').exists()).toBe(false)
-      expect(wrapper.find('.action-btn.danger').exists()).toBe(false)
-      expect(wrapper.find('.action-btn.secondary').exists()).toBe(false)
-      expect(wrapper.find('.no-actions').exists()).toBe(true)
+      statuses.forEach(status => {
+        const loan = createMockLoan({ status })
+        const wrapper = mount(LoanList, {
+          props: { loans: [loan] }
+        })
+        
+        const deleteButtons = wrapper.findAll('.action-btn').filter(btn => 
+          btn.attributes('title') === 'Delete'
+        )
+        expect(deleteButtons.length).toBe(1)
+      })
     })
 
     /**
-     * Verifies action buttons are hidden for rejected loans.
-     * Shows 'no actions' placeholder instead.
+     * Verifies approve/reject/auto-decide buttons only show for pending loans.
      * @test {LoanList}
      */
-    it('hides action buttons for rejected loan', () => {
-      const loan = createMockLoan({ status: 'rejected' })
-      const wrapper = mount(LoanList, {
-        props: { loans: [loan] }
+    it('shows approve/reject/auto-decide buttons only for pending loans', () => {
+      const pendingLoan = createMockLoan({ status: 'pending' })
+      const approvedLoan = createMockLoan({ status: 'approved' })
+      
+      const pendingWrapper = mount(LoanList, {
+        props: { loans: [pendingLoan] }
+      })
+      const approvedWrapper = mount(LoanList, {
+        props: { loans: [approvedLoan] }
       })
       
-      expect(wrapper.find('.action-btn.success').exists()).toBe(false)
-      expect(wrapper.find('.action-btn.danger').exists()).toBe(false)
-      expect(wrapper.find('.action-btn.secondary').exists()).toBe(false)
-      expect(wrapper.find('.no-actions').exists()).toBe(true)
+      expect(pendingWrapper.find('.action-btn.success').exists()).toBe(true)
+      expect(approvedWrapper.find('.action-btn.success').exists()).toBe(false)
     })
   })
 
@@ -346,7 +352,10 @@ describe('LoanList', () => {
         props: { loans: [loan] }
       })
       
-      await wrapper.find('.action-btn.danger').trigger('click')
+      const dangerButtons = wrapper.findAll('.action-btn.danger')
+      const rejectButton = dangerButtons.find(btn => btn.attributes('title') === 'Reject')
+      
+      await rejectButton?.trigger('click')
       
       expect(wrapper.emitted('reject')).toBeTruthy()
       expect(wrapper.emitted('reject')?.[0]).toEqual(['loan-456'])
@@ -366,6 +375,66 @@ describe('LoanList', () => {
       
       expect(wrapper.emitted('autoDecide')).toBeTruthy()
       expect(wrapper.emitted('autoDecide')?.[0]).toEqual(['loan-789'])
+    })
+
+    /**
+     * Verifies 'delete' event is emitted with loan ID when delete button clicked and confirmed.
+     * @test {LoanList}
+     */
+    it('emits delete event when delete button clicked and confirmed', async () => {
+      const loan = createMockLoan({ id: 'loan-delete', applicantName: 'Test User' })
+      const wrapper = mount(LoanList, {
+        props: { loans: [loan] },
+        global: {
+          stubs: {
+            teleport: true
+          }
+        }
+      })
+      
+      const deleteButtons = wrapper.findAll('.action-btn').filter(btn => 
+        btn.attributes('title') === 'Delete'
+      )
+      await deleteButtons[0]?.trigger('click')
+      
+      // Modal should be visible
+      expect(wrapper.find('.modal-overlay').exists()).toBe(true)
+      expect(wrapper.text()).toContain('Are you sure you want to delete the loan application for Test User?')
+      
+      // Click the confirm button
+      await wrapper.find('.btn-delete').trigger('click')
+      
+      expect(wrapper.emitted('delete')).toBeTruthy()
+      expect(wrapper.emitted('delete')?.[0]).toEqual(['loan-delete'])
+    })
+
+    /**
+     * Verifies 'delete' event is NOT emitted when user cancels confirmation.
+     * @test {LoanList}
+     */
+    it('does not emit delete event when user cancels confirmation', async () => {
+      const loan = createMockLoan({ id: 'loan-cancel' })
+      const wrapper = mount(LoanList, {
+        props: { loans: [loan] },
+        global: {
+          stubs: {
+            teleport: true
+          }
+        }
+      })
+      
+      const deleteButtons = wrapper.findAll('.action-btn').filter(btn => 
+        btn.attributes('title') === 'Delete'
+      )
+      await deleteButtons[0]?.trigger('click')
+      
+      // Modal should be visible
+      expect(wrapper.find('.modal-overlay').exists()).toBe(true)
+      
+      // Click the cancel button
+      await wrapper.find('.btn-ghost').trigger('click')
+      
+      expect(wrapper.emitted('delete')).toBeFalsy()
     })
   })
 })
