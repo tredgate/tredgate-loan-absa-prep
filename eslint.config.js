@@ -13,9 +13,7 @@ export default tseslint.config(
         parser: tseslint.parser
       },
       globals: {
-        window: 'readonly',
-        document: 'readonly',
-        navigator: 'readonly'
+        window: 'readonly'
       }
     }
   },
