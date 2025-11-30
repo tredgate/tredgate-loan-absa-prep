@@ -177,7 +177,6 @@ export class LoanPage {
    * Fill the loan application form with provided data
    */
   async fillLoanForm(data: LoanTestData): Promise<void> {
-    await this.page.context().browser()?.contexts()
     await this.fillApplicantName(data.applicantName)
     await this.fillAmount(data.amount)
     await this.fillTermMonths(data.termMonths)
