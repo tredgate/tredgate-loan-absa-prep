@@ -95,10 +95,7 @@ To generate and view the HTML coverage report:
 # Generate the coverage report
 npm run test:report
 
-# Or manually:
-npm run test:coverage
-
-# View the report (requires npx http-server or similar)
+# View the report in a browser
 npx http-server test-results/coverage -o
 ```
 

@@ -11,7 +11,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",
-    "test:report": "vitest run --coverage && echo '\n✅ Coverage report generated at test-results/coverage/index.html\n' && echo 'To view the report, run: npx http-server test-results/coverage -o'",
+    "test:report": "vitest run --coverage",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts"
   },
   "dependencies": {
