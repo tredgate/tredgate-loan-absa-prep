@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Unit tests for the loanService module.
+ * Tests all business logic functions for loan management including CRUD operations,
+ * validation, calculations, and auto-decision rules.
+ */
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {
   getLoans,
@@ -9,7 +14,10 @@ import {
 } from '../src/services/loanService'
 import type { LoanApplication } from '../src/types/loan'
 
-// Mock localStorage
+/**
+ * Mock localStorage implementation for testing.
+ * Provides a clean in-memory store that can be cleared between tests.
+ */
 const localStorageMock = (() => {
   let store: Record<string, string> = {}
   return {
@@ -32,18 +40,34 @@ const localStorageMock = (() => {
 
 Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock })
 
+/**
+ * Test suite for loanService module.
+ * Covers all exported functions with various scenarios and edge cases.
+ */
 describe('loanService', () => {
   beforeEach(() => {
     localStorageMock.clear()
     vi.clearAllMocks()
   })
 
+  /**
+   * Tests for getLoans() function.
+   * Verifies retrieval of loans from localStorage.
+   */
   describe('getLoans', () => {
+    /**
+     * Verifies that an empty array is returned when localStorage is empty.
+     * @test {getLoans}
+     */
     it('returns empty array when nothing is stored', () => {
       const loans = getLoans()
       expect(loans).toEqual([])
     })
 
+    /**
+     * Verifies that stored loans are correctly retrieved and parsed from localStorage.
+     * @test {getLoans}
+     */
     it('returns stored loans', () => {
       const storedLoans: LoanApplication[] = [
         {
@@ -63,7 +87,15 @@ describe('loanService', () => {
     })
   })
 
+  /**
+   * Tests for saveLoans() function.
+   * Verifies persistence of loans to localStorage.
+   */
   describe('saveLoans', () => {
+    /**
+     * Verifies that loans are correctly serialized and saved to localStorage.
+     * @test {saveLoans}
+     */
     it('saves loans to localStorage', () => {
       const loans: LoanApplication[] = [
         {
@@ -86,7 +118,16 @@ describe('loanService', () => {
     })
   })
 
+  /**
+   * Tests for createLoanApplication() function.
+   * Verifies loan creation with validation rules.
+   */
   describe('createLoanApplication', () => {
+    /**
+     * Verifies successful loan creation with valid input data.
+     * Checks that ID, createdAt, and pending status are automatically set.
+     * @test {createLoanApplication}
+     */
     it('creates a new loan with pending status', () => {
       const input = {
         applicantName: 'Alice Smith',
@@ -106,6 +147,10 @@ describe('loanService', () => {
       expect(loan.createdAt).toBeDefined()
     })
 
+    /**
+     * Verifies validation error when applicant name is empty.
+     * @test {createLoanApplication}
+     */
     it('throws error for empty applicant name', () => {
       expect(() =>
         createLoanApplication({
@@ -117,6 +162,10 @@ describe('loanService', () => {
       ).toThrow('Applicant name is required')
     })
 
+    /**
+     * Verifies validation error when loan amount is zero or negative.
+     * @test {createLoanApplication}
+     */
     it('throws error for amount <= 0', () => {
       expect(() =>
         createLoanApplication({
@@ -128,6 +177,10 @@ describe('loanService', () => {
       ).toThrow('Amount must be greater than 0')
     })
 
+    /**
+     * Verifies validation error when term months is zero or negative.
+     * @test {createLoanApplication}
+     */
     it('throws error for termMonths <= 0', () => {
       expect(() =>
         createLoanApplication({
@@ -139,6 +192,10 @@ describe('loanService', () => {
       ).toThrow('Term months must be greater than 0')
     })
 
+    /**
+     * Verifies validation error when interest rate is negative.
+     * @test {createLoanApplication}
+     */
     it('throws error for negative interest rate', () => {
       expect(() =>
         createLoanApplication({
@@ -151,7 +208,15 @@ describe('loanService', () => {
     })
   })
 
+  /**
+   * Tests for updateLoanStatus() function.
+   * Verifies loan status updates and error handling.
+   */
   describe('updateLoanStatus', () => {
+    /**
+     * Verifies successful status update from pending to approved.
+     * @test {updateLoanStatus}
+     */
     it('updates loan status', () => {
       const loan: LoanApplication = {
         id: 'test-id',
@@ -170,6 +235,10 @@ describe('loanService', () => {
       expect(loans[0]?.status).toBe('approved')
     })
 
+    /**
+     * Verifies error is thrown when trying to update non-existent loan.
+     * @test {updateLoanStatus}
+     */
     it('throws error for non-existent loan', () => {
       expect(() => updateLoanStatus('non-existent', 'approved')).toThrow(
         'Loan with id non-existent not found'
@@ -177,7 +246,16 @@ describe('loanService', () => {
     })
   })
 
+  /**
+   * Tests for calculateMonthlyPayment() function.
+   * Verifies monthly payment calculation with simple interest formula.
+   */
   describe('calculateMonthlyPayment', () => {
+    /**
+     * Verifies monthly payment calculation for a standard loan.
+     * Formula: (amount * (1 + interestRate)) / termMonths
+     * @test {calculateMonthlyPayment}
+     */
     it('calculates monthly payment correctly for basic case', () => {
       const loan: LoanApplication = {
         id: '1',
@@ -195,6 +273,11 @@ describe('loanService', () => {
       expect(payment).toBeCloseTo(916.67, 1)
     })
 
+    /**
+     * Verifies monthly payment calculation when interest rate is 0%.
+     * Should return amount / termMonths.
+     * @test {calculateMonthlyPayment}
+     */
     it('calculates monthly payment for 0% interest', () => {
       const loan: LoanApplication = {
         id: '1',
@@ -212,6 +295,11 @@ describe('loanService', () => {
       expect(payment).toBe(1000)
     })
 
+    /**
+     * Verifies monthly payment calculation for large loan amounts.
+     * Ensures no precision issues with large numbers.
+     * @test {calculateMonthlyPayment}
+     */
     it('calculates monthly payment for large loan', () => {
       const loan: LoanApplication = {
         id: '1',
@@ -230,7 +318,17 @@ describe('loanService', () => {
     })
   })
 
+  /**
+   * Tests for autoDecideLoan() function.
+   * Verifies automatic loan approval/rejection based on business rules.
+   * Rules: Approve if amount <= 100000 AND termMonths <= 60, otherwise reject.
+   */
   describe('autoDecideLoan', () => {
+    /**
+     * Verifies loan is approved when at maximum allowed limits.
+     * Amount = 100000 (max) and termMonths = 60 (max) should approve.
+     * @test {autoDecideLoan}
+     */
     it('approves loan when amount <= 100000 and termMonths <= 60', () => {
       const loan: LoanApplication = {
         id: 'auto-test',
@@ -249,6 +347,11 @@ describe('loanService', () => {
       expect(loans[0]?.status).toBe('approved')
     })
 
+    /**
+     * Verifies small, short-term loans are approved.
+     * Both amount and term are well within limits.
+     * @test {autoDecideLoan}
+     */
     it('approves small, short-term loan', () => {
       const loan: LoanApplication = {
         id: 'small-loan',
@@ -267,6 +370,11 @@ describe('loanService', () => {
       expect(loans[0]?.status).toBe('approved')
     })
 
+    /**
+     * Verifies loan is rejected when amount exceeds maximum limit.
+     * Amount > 100000 should result in rejection.
+     * @test {autoDecideLoan}
+     */
     it('rejects loan when amount > 100000', () => {
       const loan: LoanApplication = {
         id: 'big-loan',
@@ -285,6 +393,11 @@ describe('loanService', () => {
       expect(loans[0]?.status).toBe('rejected')
     })
 
+    /**
+     * Verifies loan is rejected when term exceeds maximum limit.
+     * termMonths > 60 should result in rejection.
+     * @test {autoDecideLoan}
+     */
     it('rejects loan when termMonths > 60', () => {
       const loan: LoanApplication = {
         id: 'long-loan',
@@ -303,6 +416,11 @@ describe('loanService', () => {
       expect(loans[0]?.status).toBe('rejected')
     })
 
+    /**
+     * Verifies loan is rejected when both amount and term exceed limits.
+     * Tests compound rejection scenario.
+     * @test {autoDecideLoan}
+     */
     it('rejects loan when both amount and termMonths exceed limits', () => {
       const loan: LoanApplication = {
         id: 'bad-loan',
@@ -321,6 +439,10 @@ describe('loanService', () => {
       expect(loans[0]?.status).toBe('rejected')
     })
 
+    /**
+     * Verifies error is thrown when trying to auto-decide non-existent loan.
+     * @test {autoDecideLoan}
+     */
     it('throws error for non-existent loan', () => {
       expect(() => autoDecideLoan('non-existent')).toThrow(
         'Loan with id non-existent not found'

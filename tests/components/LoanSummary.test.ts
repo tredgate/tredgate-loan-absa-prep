@@ -1,9 +1,23 @@
+/**
+ * @fileoverview Unit tests for the LoanSummary component.
+ * Tests statistics calculation, currency formatting, CSS styling,
+ * and reactivity when loan data changes.
+ */
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import LoanSummary from '../../src/components/LoanSummary.vue'
 import type { LoanApplication } from '../../src/types/loan'
 
+/**
+ * Test suite for the LoanSummary component.
+ * Covers rendering, statistics, formatting, styling, and reactivity.
+ */
 describe('LoanSummary', () => {
+  /**
+   * Helper function to create mock loan data for testing.
+   * @param overrides - Partial loan properties to override defaults
+   * @returns Complete LoanApplication object
+   */
   const createMockLoan = (overrides: Partial<LoanApplication> = {}): LoanApplication => ({
     id: 'test-id',
     applicantName: 'John Doe',
@@ -15,17 +29,33 @@ describe('LoanSummary', () => {
     ...overrides
   })
 
-  // Helper to get stat values text
+  /**
+   * Helper to get all stat value texts from the component.
+   * @param wrapper - Mounted component wrapper
+   * @returns Array of stat value strings
+   */
   function getStatValues(wrapper: ReturnType<typeof mount>) {
     return wrapper.findAll('.stat-value').map(v => v.text())
   }
 
-  // Helper to get stat cards
+  /**
+   * Helper to get all stat card elements.
+   * @param wrapper - Mounted component wrapper
+   * @returns Array of stat card wrappers
+   */
   function getStatCards(wrapper: ReturnType<typeof mount>) {
     return wrapper.findAll('.stat-card')
   }
 
+  /**
+   * Tests for component rendering.
+   * Verifies all stat cards and labels are properly displayed.
+   */
   describe('rendering', () => {
+    /**
+     * Verifies all five stat cards are rendered.
+     * @test {LoanSummary}
+     */
     it('renders all stat cards', () => {
       const wrapper = mount(LoanSummary, {
         props: { loans: [] }
@@ -35,6 +65,10 @@ describe('LoanSummary', () => {
       expect(statCards.length).toBe(5)
     })
 
+    /**
+     * Verifies all stat labels match expected text.
+     * @test {LoanSummary}
+     */
     it('renders stat labels correctly', () => {
       const wrapper = mount(LoanSummary, {
         props: { loans: [] }
@@ -51,7 +85,15 @@ describe('LoanSummary', () => {
     })
   })
 
+  /**
+   * Tests for statistics calculation.
+   * Verifies counts and amounts are calculated correctly.
+   */
   describe('statistics calculation', () => {
+    /**
+     * Verifies all values are zero when no loans exist.
+     * @test {LoanSummary}
+     */
     it('shows zero values when no loans', () => {
       const wrapper = mount(LoanSummary, {
         props: { loans: [] }
@@ -65,6 +107,10 @@ describe('LoanSummary', () => {
       expect(values[4]).toBe('$0') // Total Approved Amount
     })
 
+    /**
+     * Verifies total applications count includes all loan statuses.
+     * @test {LoanSummary}
+     */
     it('correctly counts total applications', () => {
       const loans = [
         createMockLoan({ id: '1' }),
@@ -79,6 +125,10 @@ describe('LoanSummary', () => {
       expect(values[0]).toBe('3')
     })
 
+    /**
+     * Verifies pending loans are counted correctly.
+     * @test {LoanSummary}
+     */
     it('correctly counts pending loans', () => {
       const loans = [
         createMockLoan({ id: '1', status: 'pending' }),
@@ -93,6 +143,10 @@ describe('LoanSummary', () => {
       expect(values[1]).toBe('2')
     })
 
+    /**
+     * Verifies approved loans are counted correctly.
+     * @test {LoanSummary}
+     */
     it('correctly counts approved loans', () => {
       const loans = [
         createMockLoan({ id: '1', status: 'approved' }),
@@ -107,6 +161,10 @@ describe('LoanSummary', () => {
       expect(values[2]).toBe('2')
     })
 
+    /**
+     * Verifies rejected loans are counted correctly.
+     * @test {LoanSummary}
+     */
     it('correctly counts rejected loans', () => {
       const loans = [
         createMockLoan({ id: '1', status: 'rejected' }),
@@ -122,6 +180,11 @@ describe('LoanSummary', () => {
       expect(values[3]).toBe('3')
     })
 
+    /**
+     * Verifies total approved amount only includes approved loans.
+     * Rejected and pending loans should not be counted in the total.
+     * @test {LoanSummary}
+     */
     it('correctly calculates total approved amount', () => {
       const loans = [
         createMockLoan({ id: '1', status: 'approved', amount: 25000 }),
@@ -137,6 +200,10 @@ describe('LoanSummary', () => {
       expect(values[4]).toBe('$75,000')
     })
 
+    /**
+     * Verifies all statistics are calculated correctly with mixed statuses.
+     * @test {LoanSummary}
+     */
     it('handles mixed statuses correctly', () => {
       const loans = [
         createMockLoan({ id: '1', status: 'pending' }),
@@ -158,7 +225,15 @@ describe('LoanSummary', () => {
     })
   })
 
+  /**
+   * Tests for currency formatting.
+   * Verifies amounts are displayed with proper formatting.
+   */
   describe('formatting', () => {
+    /**
+     * Verifies large amounts are formatted with commas.
+     * @test {LoanSummary}
+     */
     it('formats large amounts correctly', () => {
       const loans = [
         createMockLoan({ id: '1', status: 'approved', amount: 1234567 })
@@ -171,6 +246,10 @@ describe('LoanSummary', () => {
       expect(values[4]).toBe('$1,234,567')
     })
 
+    /**
+     * Verifies zero amount is displayed as $0.
+     * @test {LoanSummary}
+     */
     it('formats zero amount correctly', () => {
       const loans = [
         createMockLoan({ id: '1', status: 'pending' }) // No approved loans
@@ -184,7 +263,15 @@ describe('LoanSummary', () => {
     })
   })
 
+  /**
+   * Tests for CSS styling.
+   * Verifies correct CSS classes are applied to stat cards.
+   */
   describe('styling', () => {
+    /**
+     * Verifies pending card has 'pending' CSS class.
+     * @test {LoanSummary}
+     */
     it('applies correct CSS class to pending card', () => {
       const wrapper = mount(LoanSummary, {
         props: { loans: [] }
@@ -194,6 +281,10 @@ describe('LoanSummary', () => {
       expect(cards[1]?.classes()).toContain('pending')
     })
 
+    /**
+     * Verifies approved card has 'approved' CSS class.
+     * @test {LoanSummary}
+     */
     it('applies correct CSS class to approved card', () => {
       const wrapper = mount(LoanSummary, {
         props: { loans: [] }
@@ -203,6 +294,10 @@ describe('LoanSummary', () => {
       expect(cards[2]?.classes()).toContain('approved')
     })
 
+    /**
+     * Verifies rejected card has 'rejected' CSS class.
+     * @test {LoanSummary}
+     */
     it('applies correct CSS class to rejected card', () => {
       const wrapper = mount(LoanSummary, {
         props: { loans: [] }
@@ -212,6 +307,10 @@ describe('LoanSummary', () => {
       expect(cards[3]?.classes()).toContain('rejected')
     })
 
+    /**
+     * Verifies amount card has 'amount' CSS class.
+     * @test {LoanSummary}
+     */
     it('applies correct CSS class to amount card', () => {
       const wrapper = mount(LoanSummary, {
         props: { loans: [] }
@@ -222,7 +321,15 @@ describe('LoanSummary', () => {
     })
   })
 
+  /**
+   * Tests for component reactivity.
+   * Verifies statistics update when props change.
+   */
   describe('reactivity', () => {
+    /**
+     * Verifies component re-renders when loans prop is updated.
+     * @test {LoanSummary}
+     */
     it('updates when loans prop changes', async () => {
       const wrapper = mount(LoanSummary, {
         props: { loans: [] }

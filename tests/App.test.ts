@@ -1,9 +1,17 @@
+/**
+ * @fileoverview Unit tests for the main App component.
+ * Tests component rendering, child component integration, event handling,
+ * and data flow between components.
+ */
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import App from '../src/App.vue'
 import type { LoanApplication } from '../src/types/loan'
 
-// Mock loanService
+/**
+ * Mock loanService module to isolate App component tests.
+ * All service functions are mocked with default implementations.
+ */
 vi.mock('../src/services/loanService', () => ({
   getLoans: vi.fn(() => []),
   updateLoanStatus: vi.fn(),
@@ -14,11 +22,20 @@ vi.mock('../src/services/loanService', () => ({
 
 import * as loanService from '../src/services/loanService'
 
+/**
+ * Test suite for the main App component.
+ * Covers rendering, data loading, event handling, and component integration.
+ */
 describe('App', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
+  /**
+   * Helper function to create mock loan data for testing.
+   * @param overrides - Partial loan properties to override defaults
+   * @returns Complete LoanApplication object
+   */
   const createMockLoan = (overrides: Partial<LoanApplication> = {}): LoanApplication => ({
     id: 'test-id',
     applicantName: 'John Doe',
@@ -30,7 +47,15 @@ describe('App', () => {
     ...overrides
   })
 
+  /**
+   * Tests for component rendering.
+   * Verifies all UI elements and child components are properly rendered.
+   */
   describe('rendering', () => {
+    /**
+     * Verifies the app header contains title and tagline.
+     * @test {App}
+     */
     it('renders the app header', () => {
       const wrapper = mount(App)
       
@@ -39,6 +64,10 @@ describe('App', () => {
       expect(wrapper.find('.tagline').text()).toBe('Simple loan application management')
     })
 
+    /**
+     * Verifies the Tredgate logo is rendered with correct alt text.
+     * @test {App}
+     */
     it('renders the logo', () => {
       const wrapper = mount(App)
       
@@ -47,18 +76,30 @@ describe('App', () => {
       expect(logo.attributes('alt')).toBe('Tredgate Logo')
     })
 
+    /**
+     * Verifies LoanSummary child component is rendered.
+     * @test {App}
+     */
     it('renders LoanSummary component', () => {
       const wrapper = mount(App)
       
       expect(wrapper.findComponent({ name: 'LoanSummary' }).exists()).toBe(true)
     })
 
+    /**
+     * Verifies LoanForm child component is rendered.
+     * @test {App}
+     */
     it('renders LoanForm component', () => {
       const wrapper = mount(App)
       
       expect(wrapper.findComponent({ name: 'LoanForm' }).exists()).toBe(true)
     })
 
+    /**
+     * Verifies LoanList child component is rendered.
+     * @test {App}
+     */
     it('renders LoanList component', () => {
       const wrapper = mount(App)
       
@@ -66,13 +107,25 @@ describe('App', () => {
     })
   })
 
+  /**
+   * Tests for initial data loading on component mount.
+   * Verifies loans are fetched and passed to child components.
+   */
   describe('initial data loading', () => {
+    /**
+     * Verifies getLoans is called when component mounts.
+     * @test {App}
+     */
     it('calls getLoans on mount', () => {
       mount(App)
       
       expect(loanService.getLoans).toHaveBeenCalled()
     })
 
+    /**
+     * Verifies loaded loans are passed as props to child components.
+     * @test {App}
+     */
     it('passes loans to child components', async () => {
       const mockLoans = [createMockLoan()]
       vi.mocked(loanService.getLoans).mockReturnValue(mockLoans)
@@ -88,7 +141,15 @@ describe('App', () => {
     })
   })
 
+  /**
+   * Tests for loan creation event handling.
+   * Verifies App responds correctly to LoanForm 'created' event.
+   */
   describe('loan creation', () => {
+    /**
+     * Verifies loans list is refreshed when LoanForm emits 'created' event.
+     * @test {App}
+     */
     it('refreshes loans when LoanForm emits created event', async () => {
       const wrapper = mount(App)
       
@@ -101,7 +162,15 @@ describe('App', () => {
     })
   })
 
+  /**
+   * Tests for loan approval event handling.
+   * Verifies App correctly handles LoanList 'approve' event.
+   */
   describe('loan approval', () => {
+    /**
+     * Verifies updateLoanStatus is called with 'approved' status.
+     * @test {App}
+     */
     it('calls updateLoanStatus with approved status', async () => {
       const mockLoans = [createMockLoan({ id: 'loan-123' })]
       vi.mocked(loanService.getLoans).mockReturnValue(mockLoans)
@@ -114,6 +183,10 @@ describe('App', () => {
       expect(loanService.updateLoanStatus).toHaveBeenCalledWith('loan-123', 'approved')
     })
 
+    /**
+     * Verifies loans list is refreshed after loan approval.
+     * @test {App}
+     */
     it('refreshes loans after approval', async () => {
       const mockLoans = [createMockLoan()]
       vi.mocked(loanService.getLoans).mockReturnValue(mockLoans)
@@ -128,7 +201,15 @@ describe('App', () => {
     })
   })
 
+  /**
+   * Tests for loan rejection event handling.
+   * Verifies App correctly handles LoanList 'reject' event.
+   */
   describe('loan rejection', () => {
+    /**
+     * Verifies updateLoanStatus is called with 'rejected' status.
+     * @test {App}
+     */
     it('calls updateLoanStatus with rejected status', async () => {
       const mockLoans = [createMockLoan({ id: 'loan-456' })]
       vi.mocked(loanService.getLoans).mockReturnValue(mockLoans)
@@ -141,6 +222,10 @@ describe('App', () => {
       expect(loanService.updateLoanStatus).toHaveBeenCalledWith('loan-456', 'rejected')
     })
 
+    /**
+     * Verifies loans list is refreshed after loan rejection.
+     * @test {App}
+     */
     it('refreshes loans after rejection', async () => {
       const mockLoans = [createMockLoan()]
       vi.mocked(loanService.getLoans).mockReturnValue(mockLoans)
@@ -155,7 +240,15 @@ describe('App', () => {
     })
   })
 
+  /**
+   * Tests for auto-decide event handling.
+   * Verifies App correctly handles LoanList 'auto-decide' event.
+   */
   describe('auto-decide', () => {
+    /**
+     * Verifies autoDecideLoan is called with correct loan ID.
+     * @test {App}
+     */
     it('calls autoDecideLoan with loan id', async () => {
       const mockLoans = [createMockLoan({ id: 'loan-789' })]
       vi.mocked(loanService.getLoans).mockReturnValue(mockLoans)
@@ -168,6 +261,10 @@ describe('App', () => {
       expect(loanService.autoDecideLoan).toHaveBeenCalledWith('loan-789')
     })
 
+    /**
+     * Verifies loans list is refreshed after auto-decide action.
+     * @test {App}
+     */
     it('refreshes loans after auto-decide', async () => {
       const mockLoans = [createMockLoan()]
       vi.mocked(loanService.getLoans).mockReturnValue(mockLoans)
@@ -182,7 +279,15 @@ describe('App', () => {
     })
   })
 
+  /**
+   * Tests for data flow between components.
+   * Verifies props are updated when loans change.
+   */
   describe('data flow', () => {
+    /**
+     * Verifies LoanSummary receives updated loans after creation.
+     * @test {App}
+     */
     it('updates LoanSummary when loans change', async () => {
       const initialLoans: LoanApplication[] = []
       vi.mocked(loanService.getLoans).mockReturnValue(initialLoans)
@@ -201,6 +306,10 @@ describe('App', () => {
       expect(loanSummary.props('loans')).toEqual(newLoans)
     })
 
+    /**
+     * Verifies LoanList receives updated loans after creation.
+     * @test {App}
+     */
     it('updates LoanList when loans change', async () => {
       const initialLoans: LoanApplication[] = []
       vi.mocked(loanService.getLoans).mockReturnValue(initialLoans)
