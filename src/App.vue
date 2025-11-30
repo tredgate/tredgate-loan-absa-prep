@@ -48,14 +48,18 @@ onMounted(() => {
     <LoanSummary :loans="loans" />
 
     <main class="main-content">
-      <LoanForm @created="refreshLoans" />
-      <LoanList
-        :loans="loans"
-        @approve="handleApprove"
-        @reject="handleReject"
-        @auto-decide="handleAutoDecide"
-        @delete="handleDelete"
-      />
+      <section class="left-panel">
+        <LoanForm @created="refreshLoans" />
+      </section>
+      <section class="right-panel">
+        <LoanList
+          :loans="loans"
+          @approve="handleApprove"
+          @reject="handleReject"
+          @auto-decide="handleAutoDecide"
+          @delete="handleDelete"
+        />
+      </section>
     </main>
   </div>
 </template>
@@ -78,7 +82,7 @@ onMounted(() => {
 
 .tagline {
   color: var(--tagline-color);
-  margin-top: -0.5rem;
+  margin-top: -0.25rem;
 }
 
 .main-content {
@@ -87,13 +91,25 @@ onMounted(() => {
   align-items: flex-start;
 }
 
+.left-panel {
+  flex: 0 0 340px;
+}
+
+.right-panel {
+  flex: 1;
+  min-width: 0; /* Allows flex item to shrink below content size to prevent overflow */
+}
+
 @media (max-width: 900px) {
   .main-content {
     flex-direction: column;
   }
 
-  .main-content > :first-child {
-    max-width: 100%;
+  .left-panel {
+    width: 100%;
+  }
+
+  .right-panel {
     width: 100%;
   }
 }
