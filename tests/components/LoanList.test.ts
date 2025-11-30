@@ -382,12 +382,14 @@ describe('LoanList', () => {
      * @test {LoanList}
      */
     it('emits delete event when delete button clicked and confirmed', async () => {
-      // Mock window.confirm to return true (user confirms)
-      vi.stubGlobal('confirm', vi.fn(() => true))
-      
       const loan = createMockLoan({ id: 'loan-delete', applicantName: 'Test User' })
       const wrapper = mount(LoanList, {
-        props: { loans: [loan] }
+        props: { loans: [loan] },
+        global: {
+          stubs: {
+            teleport: true
+          }
+        }
       })
       
       const deleteButtons = wrapper.findAll('.action-btn').filter(btn => 
@@ -395,13 +397,15 @@ describe('LoanList', () => {
       )
       await deleteButtons[0]?.trigger('click')
       
-      expect(window.confirm).toHaveBeenCalledWith(
-        'Are you sure you want to delete the loan application for Test User?'
-      )
+      // Modal should be visible
+      expect(wrapper.find('.modal-overlay').exists()).toBe(true)
+      expect(wrapper.text()).toContain('Are you sure you want to delete the loan application for Test User?')
+      
+      // Click the confirm button
+      await wrapper.find('.btn-delete').trigger('click')
+      
       expect(wrapper.emitted('delete')).toBeTruthy()
       expect(wrapper.emitted('delete')?.[0]).toEqual(['loan-delete'])
-      
-      vi.unstubAllGlobals()
     })
 
     /**
@@ -409,12 +413,14 @@ describe('LoanList', () => {
      * @test {LoanList}
      */
     it('does not emit delete event when user cancels confirmation', async () => {
-      // Mock window.confirm to return false (user cancels)
-      vi.stubGlobal('confirm', vi.fn(() => false))
-      
       const loan = createMockLoan({ id: 'loan-cancel' })
       const wrapper = mount(LoanList, {
-        props: { loans: [loan] }
+        props: { loans: [loan] },
+        global: {
+          stubs: {
+            teleport: true
+          }
+        }
       })
       
       const deleteButtons = wrapper.findAll('.action-btn').filter(btn => 
@@ -422,10 +428,13 @@ describe('LoanList', () => {
       )
       await deleteButtons[0]?.trigger('click')
       
-      expect(window.confirm).toHaveBeenCalled()
-      expect(wrapper.emitted('delete')).toBeFalsy()
+      // Modal should be visible
+      expect(wrapper.find('.modal-overlay').exists()).toBe(true)
       
-      vi.unstubAllGlobals()
+      // Click the cancel button
+      await wrapper.find('.btn-ghost').trigger('click')
+      
+      expect(wrapper.emitted('delete')).toBeFalsy()
     })
   })
 })
