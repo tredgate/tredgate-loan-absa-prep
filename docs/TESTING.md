@@ -85,14 +85,34 @@ After running tests, reports are generated in `test-results/`:
 - `junit.xml` - JUnit XML report
 - `coverage/` - HTML coverage report (when running with `--coverage`)
 
-### Example HTML Report
+> **Note:** The `test-results/` directory is in `.gitignore` and should not be committed to the repository.
 
-An example HTML coverage report is included in the repository at `docs/example-report/`. You can view it by opening `docs/example-report/index.html` in a browser.
+### Generating an HTML Coverage Report
 
-This example shows:
-- Overall coverage summary with percentages for statements, branches, functions, and lines
-- Per-file coverage breakdown
-- Clickable files to view line-by-line coverage details
+To generate and view the HTML coverage report:
+
+```bash
+# Generate the coverage report
+npm run test:report
+
+# Or manually:
+npm run test:coverage
+
+# View the report (requires npx http-server or similar)
+npx http-server test-results/coverage -o
+```
+
+### Coverage Report Screenshots
+
+The coverage report shows:
+
+1. **Summary View** - Overall coverage percentages for statements, branches, functions, and lines:
+
+![Coverage Report Summary](https://github.com/user-attachments/assets/9f9f0377-7f7a-47b4-afc7-c967bb251631)
+
+2. **Detailed File View** - Line-by-line coverage highlighting uncovered code in red:
+
+![Coverage Report Detail](https://github.com/user-attachments/assets/7dd18d18-8480-4602-8c99-44edc96985c2)
 
 ## Coverage
 
@@ -101,8 +121,8 @@ The project aims for high test coverage. Current coverage is 99%+ across all met
 View the coverage report:
 
 ```bash
-npm run test:coverage
-# Then open test-results/coverage/index.html
+npm run test:report
+# Opens test-results/coverage/index.html in your browser
 ```
 
 ## JSDoc Documentation
