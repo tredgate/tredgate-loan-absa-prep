@@ -59,3 +59,6 @@ When reviewing code or features, you MUST check:
 5. Tests are clear, readable, reusable, deterministic and isolated from others
 6. For texts use library of texts, no hardcoding to the tests and Page Objects
 7. No logic is placed directly in the tests, use helper folders
+8. All expects have custom messages for good readability and easy debugging
+9. All expects are inside the Page Objects
+10. Locators are based on unique identifiers. If there is no usable, choose alternative and write unstable elements to the comments to fix it in the future
