@@ -1,6 +1,19 @@
 import type { LoanApplication, LoanStatus, CreateLoanInput } from '../types/loan'
+import { createAuditLogEntry } from './auditLogService'
 
 const STORAGE_KEY = 'tredgate_loans'
+
+/**
+ * Format currency for audit log details.
+ */
+function formatCurrencyForLog(amount: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(amount)
+}
 
 /**
  * Generate a simple unique ID
@@ -65,6 +78,16 @@ export function createLoanApplication(input: CreateLoanInput): LoanApplication {
   loans.push(newLoan)
   saveLoans(loans)
 
+  // Record audit log entry for loan creation
+  createAuditLogEntry({
+    actionType: 'create',
+    loanId: newLoan.id,
+    applicantName: newLoan.applicantName,
+    previousStatus: null,
+    newStatus: 'pending',
+    details: `New loan application created for ${formatCurrencyForLog(newLoan.amount)} over ${newLoan.termMonths} months`
+  })
+
   return newLoan
 }
 
@@ -81,9 +104,21 @@ export function updateLoanStatus(id: string, status: LoanStatus): void {
 
   const loan = loans[loanIndex]
   if (loan) {
+    const previousStatus = loan.status
     loan.status = status
+    saveLoans(loans)
+
+    // Record audit log entry for status change (approve/reject)
+    const actionType = status === 'approved' ? 'approve' : 'reject'
+    createAuditLogEntry({
+      actionType,
+      loanId: loan.id,
+      applicantName: loan.applicantName,
+      previousStatus,
+      newStatus: status,
+      details: `Loan ${status} for ${loan.applicantName} (${formatCurrencyForLog(loan.amount)})`
+    })
   }
-  saveLoans(loans)
 }
 
 /**
@@ -108,13 +143,33 @@ export function autoDecideLoan(id: string): void {
     throw new Error(`Loan with id ${id} not found`)
   }
 
+  const previousStatus = loan.status
+  let newStatus: LoanStatus
+  let reason: string
+
   if (loan.amount <= 100000 && loan.termMonths <= 60) {
-    loan.status = 'approved'
+    newStatus = 'approved'
+    reason = 'amount ≤ $100,000 and term ≤ 60 months'
   } else {
-    loan.status = 'rejected'
+    newStatus = 'rejected'
+    const reasons: string[] = []
+    if (loan.amount > 100000) reasons.push('amount > $100,000')
+    if (loan.termMonths > 60) reasons.push('term > 60 months')
+    reason = reasons.join(' and ')
   }
 
+  loan.status = newStatus
   saveLoans(loans)
+
+  // Record audit log entry for auto-decide
+  createAuditLogEntry({
+    actionType: 'auto-decide',
+    loanId: loan.id,
+    applicantName: loan.applicantName,
+    previousStatus,
+    newStatus,
+    details: `Auto-decision: ${newStatus} (${reason})`
+  })
 }
 
 /**
@@ -128,6 +183,20 @@ export function deleteLoan(id: string): void {
     throw new Error(`Loan with id ${id} not found`)
   }
 
+  // Capture loan data before deletion for audit log
+  const loan = loans[loanIndex]!
+  const { applicantName, status, amount } = loan
+
   loans.splice(loanIndex, 1)
   saveLoans(loans)
+
+  // Record audit log entry for deletion
+  createAuditLogEntry({
+    actionType: 'delete',
+    loanId: id,
+    applicantName,
+    previousStatus: status,
+    newStatus: null,
+    details: `Loan application deleted for ${applicantName} (${formatCurrencyForLog(amount)}, was ${status})`
+  })
 }
