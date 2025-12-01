@@ -183,12 +183,8 @@ export function deleteLoan(id: string): void {
     throw new Error(`Loan with id ${id} not found`)
   }
 
-  const loan = loans[loanIndex]
-  if (!loan) {
-    throw new Error(`Loan with id ${id} not found`)
-  }
-
   // Capture loan data before deletion for audit log
+  const loan = loans[loanIndex]!
   const { applicantName, status, amount } = loan
 
   loans.splice(loanIndex, 1)
